@@ -6,6 +6,7 @@ import { ConfigModule, ConfigType } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
+import { validate } from './config/env.validation';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import appConfig from './config/app.config';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig],
+      validate: validate,
     }),
     MongooseModule.forRootAsync({
       useFactory: (

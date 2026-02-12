@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { UsersService } from 'src/users/users.service';
@@ -25,14 +25,14 @@ export class AuthenticationService {
   async signIn(signIn: SignInDto) {
     const user = await this.userService.findOneEmail(signIn.email);
     if (!user) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials');
     }
     const isPasswordValid = await this.hashService.compare(
       signIn.password,
       user.password,
     );
     if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
+      throw new UnauthorizedException('Invalid credentials');
     }
     const accessToken = await this.jwtService.signAsync(
       {
