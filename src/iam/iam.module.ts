@@ -1,9 +1,34 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { HashingModule } from './hashing/hashing.module';
+import { ConfigModule, ConfigType } from '@nestjs/config';
+import jwtConfig from 'src/config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './authentication/strategies/jwt.strategy';
+import { APP_GUARD } from '@nestjs/core';
+import { AccessTokenGuard } from './authentication/guards/access-token.guard';
 
 @Module({
-  imports: [HashingModule, AuthenticationModule],
-  exports: [HashingModule, AuthenticationModule],
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    ConfigModule.forFeature(jwtConfig),
+    JwtModule.registerAsync({
+      imports: [ConfigModule.forFeature(jwtConfig)],
+      useFactory: (jwtConfiguration: ConfigType<typeof jwtConfig>) => ({
+        secret: jwtConfiguration.secret,
+        signOptions: {
+          audience: jwtConfiguration.audience,
+          issuer: jwtConfiguration.issuer,
+          expiresIn: jwtConfiguration.accessTokenTtl,
+        },
+      }),
+      inject: [jwtConfig.KEY],
+    }),
+    HashingModule,
+    forwardRef(() => AuthenticationModule),
+  ],
+  providers: [JwtStrategy, { provide: APP_GUARD, useClass: AccessTokenGuard }],
+  exports: [ConfigModule, JwtModule, HashingModule, AuthenticationModule],
 })
 export class IamModule {}

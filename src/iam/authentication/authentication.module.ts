@@ -1,11 +1,12 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
 import { UsersModule } from 'src/users/users.module';
 import { HashingModule } from '../hashing/hashing.module';
+import { IamModule } from '../iam.module';
 
 @Module({
-  imports: [UsersModule, HashingModule],
+  imports: [UsersModule, HashingModule, forwardRef(() => IamModule)],
   controllers: [AuthenticationController],
   providers: [AuthenticationService],
 })

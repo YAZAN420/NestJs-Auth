@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
 import { IamModule } from './iam/iam.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import databaseConfig from './config/database.config';
+import appConfig from './config/app.config';
 
 @Module({
   imports: [
@@ -12,12 +14,15 @@ import { MongooseModule } from '@nestjs/mongoose';
     IamModule,
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [appConfig, databaseConfig],
     }),
     MongooseModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
+      useFactory: (
+        databaseConfiguration: ConfigType<typeof databaseConfig>,
+      ) => ({
+        uri: databaseConfiguration.uri,
       }),
-      inject: [ConfigService],
+      inject: [databaseConfig.KEY],
     }),
   ],
   controllers: [],
