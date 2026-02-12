@@ -1,16 +1,18 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { Expose, Transform } from 'class-transformer';
 
-@Schema({ timestamps: true })
-export class User extends Document {
-  @Prop({ required: true, unique: true, trim: true })
+export class UserEntity {
+  @Expose()
+  @Transform(({ obj }) => obj._id?.toString())
+  id: string;
+  @Expose()
   username: string;
-
-  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  @Expose()
   email: string;
-
-  @Prop({ required: true, select: false })
-  password: string;
+  @Expose()
+  createdAt: Date;
+  @Expose()
+  updatedAt: Date;
 }
-
-export const UserSchema = SchemaFactory.createForClass(User);

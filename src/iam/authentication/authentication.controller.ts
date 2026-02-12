@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
-import { AuthDto } from './dto/auth.dto';
+import { SignUpDto } from './dto/sign-up.dto';
+import { SignInDto } from './dto/sign-in.dto';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -10,14 +9,14 @@ export class AuthenticationController {
 
   @Post('sign-up')
   @HttpCode(HttpStatus.CREATED)
-  signUp(@Body() authDto: AuthDto) {
-    return this.authService.signUp(authDto);
+  signUp(@Body() signUp: SignUpDto) {
+    return this.authService.signUp(signUp);
   }
 
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
-  signIn(@Body() authDto: AuthDto) {
-    return this.authService.signIn(authDto);
+  signIn(@Body() signIn: SignInDto) {
+    return this.authService.signIn(signIn);
   }
 
   @Post('sign-out')

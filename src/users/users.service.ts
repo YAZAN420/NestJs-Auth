@@ -6,9 +6,11 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './entities/user.entity';
-import { Model } from 'mongoose';
+import { HydratedDocument, Model } from 'mongoose';
 import { HashingService } from 'src/iam/hashing/hashing.service';
+import { plainToInstance } from 'class-transformer';
+import { User } from './schemas/user.schema';
+import { UserEntity } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -19,11 +21,21 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const exists = await this.userModel
-      .findOne({ email: createUserDto.email })
+      .findOne({
+        $or: [
+          { email: createUserDto.email },
+          { username: createUserDto.username },
+        ],
+      })
       .exec();
 
     if (exists) {
-      throw new ConflictException('Email already exists');
+      const isEmailConflict = exists.email === createUserDto.email;
+      const message = isEmailConflict
+        ? 'Email already exists'
+        : 'Username already exists';
+
+      throw new ConflictException(message);
     }
 
     const hashedPassword = await this.hashService.hash(createUserDto.password);
@@ -33,7 +45,10 @@ export class UsersService {
       password: hashedPassword,
     });
 
-    return await newUser.save();
+    const savedUser: HydratedDocument<User> = await newUser.save();
+    return plainToInstance(UserEntity, savedUser.toObject(), {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findAll() {
@@ -44,6 +59,16 @@ export class UsersService {
     const user = await this.userModel.findById(id).exec();
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+  async findOneEmail(email: string) {
+    const user = await this.userModel
+      .findOne({ email })
+      .select('+password')
+      .exec();
+    if (!user) {
+      throw new NotFoundException(`User with Email ${email} not found`);
     }
     return user;
   }
