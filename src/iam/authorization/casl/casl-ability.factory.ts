@@ -20,6 +20,7 @@ export class CaslAbilityFactory {
   constructor(private readonly cls: ClsService) {}
   createForUser() {
     const user = this.cls.get<ActiveUserData>('User');
+    console.log(user);
     const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
     if (!user) {
       return build();
@@ -28,6 +29,7 @@ export class CaslAbilityFactory {
       can(Action.Manage, 'all');
     } else {
       can(Action.Read, Product);
+      can(Action.Create, Product);
       can(Action.Update, Product, { createdBy: user.id });
       can(Action.Delete, Product, { createdBy: user.id });
       can(Action.Update, User, { _id: user.id });

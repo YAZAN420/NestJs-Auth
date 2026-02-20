@@ -9,11 +9,12 @@ export class BaseService<T extends Document> {
   constructor(
     protected readonly model: Model<T>,
     protected readonly abilityFactory: CaslAbilityFactory,
+    protected readonly subject: any,
   ) {}
 
   async findAll() {
     const ability = this.getAbility();
-    const conditions = accessibleBy(ability, Action.Read);
+    const conditions = accessibleBy(ability, Action.Read).ofType(this.subject);
     return await this.model.find(conditions).lean().exec();
   }
 
@@ -23,7 +24,7 @@ export class BaseService<T extends Document> {
     const doc = await this.model
       .findOne({
         _id: id,
-        ...accessibleBy(ability, Action.Update),
+        ...accessibleBy(ability, Action.Read).ofType(this.subject),
       })
       .lean()
       .exec();
@@ -38,12 +39,11 @@ export class BaseService<T extends Document> {
 
   async update(id: string, updateDto: UpdateQuery<T>) {
     const ability = this.getAbility();
-
     const updatedDoc = await this.model
       .findOneAndUpdate(
         {
           _id: id,
-          ...accessibleBy(ability, Action.Update),
+          ...accessibleBy(ability, Action.Update).ofType(this.subject),
         },
         updateDto,
         { new: true },
@@ -65,7 +65,7 @@ export class BaseService<T extends Document> {
     const deletedDoc = await this.model
       .findOneAndDelete({
         _id: id,
-        ...accessibleBy(ability, Action.Update),
+        ...accessibleBy(ability, Action.Delete).ofType(this.subject),
       })
       .lean()
       .exec();

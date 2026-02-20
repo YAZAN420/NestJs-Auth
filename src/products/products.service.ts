@@ -16,7 +16,7 @@ export class ProductsService extends BaseService<Product> {
     protected readonly abilityFactory: CaslAbilityFactory,
     private readonly cls: ClsService,
   ) {
-    super(productModel, abilityFactory);
+    super(productModel, abilityFactory, Product);
   }
   create(createProductDto: CreateProductDto): Promise<Product> {
     const user = this.cls.get<ActiveUserData>('User');
@@ -29,6 +29,6 @@ export class ProductsService extends BaseService<Product> {
     return newProduct.save();
   }
   async update(id: string, dto: UpdateProductDto) {
-    return super.update(id, { $set: dto });
+    return super.update(id, dto);
   }
 }
