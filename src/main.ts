@@ -14,7 +14,7 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-
+  // app.use(ExpressMongoSanitize());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

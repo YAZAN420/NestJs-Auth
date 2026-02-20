@@ -60,10 +60,16 @@ export class UsersService extends BaseService<User> {
     return super.update(id, updateUserDto);
   }
 
+  async updateInternal(id: string, updateData: Partial<User>) {
+    return await this.userModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .exec();
+  }
+
   async findOneEmail(email: string) {
     const user = await this.userModel
       .findOne({ email })
-      .select('+password')
+      .select('+password +twoFactorAuthenticationSecret')
       .exec();
     if (!user) {
       throw new NotFoundException(`User with Email ${email} not found`);
@@ -80,6 +86,15 @@ export class UsersService extends BaseService<User> {
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+    return user;
+  }
+
+  async findOneWithTfaSecret(id: string) {
+    const user = await this.userModel
+      .findById(id)
+      .select('+twoFactorAuthenticationSecret')
+      .exec();
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     return user;
   }
 

@@ -20,6 +20,7 @@ import type { Response } from 'express';
 import { SignInResponse } from './interfaces/sign-in-response.interface';
 import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -35,6 +36,7 @@ export class AuthenticationController {
   signUp(@Body() signUp: SignUpDto) {
     return this.authService.signUp(signUp);
   }
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Public()
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
@@ -74,5 +76,21 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshTokenDto);
+  }
+
+  @Post('2fa/generate')
+  async generateQrCode(@ActiveUser() user: ActiveUserData) {
+    const qrCodeDataUrl =
+      await this.authService.generateTwoFactorAuthenticationSecret(user);
+    return { qrCode: qrCodeDataUrl };
+  }
+
+  @Post('2fa/turn-on')
+  @HttpCode(HttpStatus.OK)
+  async turnOnTwoFactorAuthentication(
+    @ActiveUser() user: ActiveUserData,
+    @Body('tfaCode') tfaCode: string,
+  ) {
+    return this.authService.turnOnTwoFactorAuthentication(user.id, tfaCode);
   }
 }

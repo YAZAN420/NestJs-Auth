@@ -22,6 +22,12 @@ export class User extends Document {
     default: Role.Regular,
   })
   role: Role;
+
+  @Prop({ required: false, select: false })
+  twoFactorAuthenticationSecret?: string;
+
+  @Prop({ default: false })
+  isTwoFactorAuthenticationEnabled: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

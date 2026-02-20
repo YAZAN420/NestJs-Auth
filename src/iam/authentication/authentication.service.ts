@@ -1,4 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { UsersService } from 'src/users/users.service';
@@ -12,9 +17,12 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { plainToInstance } from 'class-transformer';
 import { ClsService } from 'nestjs-cls';
+import { OTP } from 'otplib';
+import { toDataURL } from 'qrcode';
 
 @Injectable()
 export class AuthenticationService {
+  private readonly otp = new OTP();
   constructor(
     private readonly userService: UsersService,
     private readonly hashService: HashingService,
@@ -39,6 +47,32 @@ export class AuthenticationService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    if (user.isTwoFactorAuthenticationEnabled) {
+      if (!signIn.tfaCode) {
+        throw new ForbiddenException({
+          requires2FA: true,
+          message:
+            'Please provide a two-factor authentication code to continue',
+        });
+      }
+      if (!user.twoFactorAuthenticationSecret) {
+        throw new UnauthorizedException(
+          'Two-factor authentication secret is missing',
+        );
+      }
+      const isCodeValid = await this.otp.verify({
+        token: signIn.tfaCode,
+        secret: user.twoFactorAuthenticationSecret,
+      });
+
+      if (!isCodeValid) {
+        throw new UnauthorizedException(
+          'Invalid two-factor authentication code',
+        );
+      }
+    }
+
     const tokens = await this.generateTokens(user);
 
     const userEntity = plainToInstance(UserEntity, user.toObject(), {
@@ -121,5 +155,46 @@ export class AuthenticationService {
         expiresIn,
       },
     );
+  }
+
+  async turnOnTwoFactorAuthentication(userId: string, code: string) {
+    const user = await this.userService.findOneWithTfaSecret(userId);
+
+    if (!user.twoFactorAuthenticationSecret) {
+      throw new UnauthorizedException(
+        'Two-factor authentication secret is missing',
+      );
+    }
+
+    const isCodeValid = await this.otp.verify({
+      token: code,
+      secret: user.twoFactorAuthenticationSecret,
+    });
+
+    if (!isCodeValid) {
+      throw new UnauthorizedException('Invalid two-factor authentication code');
+    }
+
+    await this.userService.updateInternal(userId, {
+      isTwoFactorAuthenticationEnabled: true,
+    });
+
+    return { message: 'Two-factor authentication successfully enabled' };
+  }
+
+  async generateTwoFactorAuthenticationSecret(user: ActiveUserData) {
+    const secret = this.otp.generateSecret();
+
+    const otpauthUrl = this.otp.generateURI({
+      label: user.email,
+      issuer: 'NestJS Course API',
+      secret: secret,
+    });
+
+    await this.userService.updateInternal(user.id, {
+      twoFactorAuthenticationSecret: secret,
+    });
+
+    return toDataURL(otpauthUrl);
   }
 }
