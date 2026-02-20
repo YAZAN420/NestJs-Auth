@@ -9,6 +9,7 @@ import { JwtStrategy } from './authentication/strategies/jwt.strategy';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './authentication/guards/access-token.guard';
 import { RolesGuard } from './authorization/guards/roles.guard';
+import { CaslModule } from './authorization/casl/casl.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RolesGuard } from './authorization/guards/roles.guard';
       inject: [jwtConfig.KEY],
     }),
     HashingModule,
+    CaslModule,
     forwardRef(() => AuthenticationModule),
   ],
   providers: [
@@ -37,6 +39,12 @@ import { RolesGuard } from './authorization/guards/roles.guard';
       useClass: RolesGuard,
     },
   ],
-  exports: [ConfigModule, JwtModule, HashingModule, AuthenticationModule],
+  exports: [
+    ConfigModule,
+    JwtModule,
+    HashingModule,
+    AuthenticationModule,
+    CaslModule,
+  ],
 })
 export class IamModule {}

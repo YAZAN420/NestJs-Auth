@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import { validate } from './config/env.validation';
+import { ClsModule } from 'nestjs-cls';
 
 @Module({
   imports: [
@@ -25,6 +26,10 @@ import { validate } from './config/env.validation';
         uri: databaseConfiguration.uri,
       }),
       inject: [databaseConfig.KEY],
+    }),
+    ClsModule.forRoot({
+      global: true,
+      middleware: { mount: true },
     }),
   ],
   controllers: [],

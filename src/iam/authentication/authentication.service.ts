@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
@@ -14,6 +11,7 @@ import { User } from 'src/users/schemas/user.schema';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { plainToInstance } from 'class-transformer';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class AuthenticationService {
@@ -23,6 +21,7 @@ export class AuthenticationService {
     private readonly jwtService: JwtService,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
+    private readonly cls: ClsService,
   ) {}
   async signUp(signUp: SignUpDto) {
     return await this.userService.create(signUp);
@@ -50,8 +49,9 @@ export class AuthenticationService {
       tokens,
     };
   }
-  async signOut(id: string) {
-    await this.userService.update(id, { refreshToken: null } as any);
+  async signOut() {
+    const id: string = this.cls.get<ActiveUserData>('User').id;
+    await this.userService.update(id, { refreshToken: undefined } as any);
     return { message: 'User signed out successfully' };
   }
 

@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Expose, Transform } from 'class-transformer';
 import { Role } from '../enums/role.enum';
+import { Types } from 'mongoose';
 
 export class UserEntity {
   @Expose()
-  @Transform(({ obj }) => obj._id?.toString())
+  @Transform(({ value }: { value: Types.ObjectId }) => value?.toString())
   id: string;
   @Expose()
   username: string;

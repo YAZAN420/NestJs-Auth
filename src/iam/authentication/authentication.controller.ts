@@ -59,8 +59,8 @@ export class AuthenticationController {
 
   @Post('sign-out')
   @HttpCode(HttpStatus.OK)
-  signOut(@ActiveUser() user: ActiveUserData) {
-    return this.authService.signOut(user.id);
+  signOut() {
+    return this.authService.signOut();
   }
 
   @ApiBearerAuth('access-token')

@@ -1,15 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { Roles } from '../decorators/roles.decorator';
 import { Role } from 'src/users/enums/role.enum';
 import { ActiveUserData } from 'src/iam/authentication/interfaces/active-user-data.interface';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly cls: ClsService,
+  ) {}
 
   canActivate(
     context: ExecutionContext,
@@ -22,7 +24,15 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const user: ActiveUserData = context.switchToHttp().getRequest().user;
+    const user = this.cls.get<ActiveUserData>('User');
+
+    if (!user) {
+      return false;
+    }
+
+    if (!user) {
+      return false;
+    }
 
     return contextRoles.some((role) => user.role === role);
   }
