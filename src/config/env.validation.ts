@@ -29,6 +29,18 @@ class EnvironmentVariables {
 
   @IsNumber()
   JWT_ACCESS_TOKEN_TTL: number;
+
+  @IsString()
+  SMTP_HOST: string;
+
+  @IsNumber()
+  SMTP_PORT: number;
+
+  @IsString()
+  SMTP_USER: string;
+
+  @IsString()
+  SMTP_PASS: string;
 }
 
 export function validate(config: Record<string, unknown>) {
