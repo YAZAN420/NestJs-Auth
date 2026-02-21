@@ -40,7 +40,7 @@ export class AuthenticationService {
     await this.userService.create({
       ...signUp,
       emailVerificationToken: verificationToken,
-    } as any);
+    });
 
     this.mailService
       .sendVerificationEmail(signUp.email, verificationToken)
