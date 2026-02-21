@@ -8,6 +8,8 @@ import {
   Res,
   Inject,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -17,11 +19,13 @@ import { ActiveUser } from './decorators/active-user.decorator';
 import type { ActiveUserData } from './interfaces/active-user-data.interface';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import type { Response } from 'express';
 import { SignInResponse } from './interfaces/sign-in-response.interface';
 import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
+import type { Request, Response } from 'express';
+import { User } from 'src/users/schemas/user.schema';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -41,12 +45,16 @@ export class AuthenticationController {
   @Public()
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(LocalAuthGuard)
   async signIn(
+    @Req() request: Request,
     @Body() signIn: SignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result: SignInResponse = await this.authService.signIn(signIn);
-
+    const result: SignInResponse = await this.authService.signIn(
+      request.user as User,
+      signIn.tfaCode,
+    );
     response.cookie('refreshToken', result.tokens.refreshToken, {
       httpOnly: true,
       secure: this.jwtConfiguration.cookieSecure,

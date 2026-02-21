@@ -5,6 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { HashingModule } from '../hashing/hashing.module';
 import { IamModule } from '../iam.module';
 import { MailModule } from 'src/mail/mail.module';
+import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { MailModule } from 'src/mail/mail.module';
     forwardRef(() => IamModule),
   ],
   controllers: [AuthenticationController],
-  providers: [AuthenticationService],
+  providers: [AuthenticationService, LocalStrategy],
 })
 export class AuthenticationModule {}

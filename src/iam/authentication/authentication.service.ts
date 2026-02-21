@@ -6,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SignUpDto } from './dto/sign-up.dto';
-import { SignInDto } from './dto/sign-in.dto';
 import { UsersService } from 'src/users/users.service';
 import { HashingService } from '../hashing/hashing.service';
 import jwtConfig from 'src/config/jwt.config';
@@ -51,35 +50,38 @@ export class AuthenticationService {
     };
   }
 
-  async signIn(signIn: SignInDto) {
-    const user = await this.userService.findOneEmail(signIn.email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.userService.findOneEmail(email);
+    if (!user) return null;
+
     const isPasswordValid = await this.hashService.compare(
-      signIn.password,
+      password,
       user.password,
     );
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+
+    if (!isPasswordValid) return null;
+    return user;
+  }
+
+  async signIn(user: User, tfaCode?: string) {
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email before signing in',
+      );
     }
 
     if (user.isTwoFactorAuthenticationEnabled) {
-      if (!signIn.tfaCode) {
+      if (!tfaCode) {
         throw new ForbiddenException({
           requires2FA: true,
           message:
             'Please provide a two-factor authentication code to continue',
         });
       }
-      if (!user.twoFactorAuthenticationSecret) {
-        throw new UnauthorizedException(
-          'Two-factor authentication secret is missing',
-        );
-      }
+
       const isCodeValid = await this.otp.verify({
-        token: signIn.tfaCode,
-        secret: user.twoFactorAuthenticationSecret,
+        token: tfaCode,
+        secret: user.twoFactorAuthenticationSecret!,
       });
 
       if (!isCodeValid) {
@@ -90,7 +92,6 @@ export class AuthenticationService {
     }
 
     const tokens = await this.generateTokens(user);
-
     const userEntity = plainToInstance(UserEntity, user.toObject(), {
       excludeExtraneousValues: true,
     });
