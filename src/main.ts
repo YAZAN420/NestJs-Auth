@@ -4,9 +4,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './common/logger/winston.config';
+// import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(winstonConfig),
+  });
+
+  // app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.use(helmet());
 
@@ -14,7 +21,6 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-  // app.use(ExpressMongoSanitize());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

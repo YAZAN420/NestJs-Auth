@@ -9,7 +9,6 @@ import {
   Inject,
   Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -17,15 +16,19 @@ import { SignInDto } from './dto/sign-in.dto';
 import { Public } from './decorators/public.decorator';
 import { ActiveUser } from './decorators/active-user.decorator';
 import type { ActiveUserData } from './interfaces/active-user-data.interface';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignInResponse } from './interfaces/sign-in-response.interface';
 import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
-import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { User } from 'src/users/schemas/user.schema';
-import { LocalAuthGuard } from './guards/local-auth.guard';
+import {
+  AuthGetMe,
+  AuthRefreshTokens,
+  AuthSignIn,
+  AuthSignUp,
+  AuthTurnOn2FA,
+} from './decorators/authentication.decorators';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -35,17 +38,11 @@ export class AuthenticationController {
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
   ) {}
 
-  @Public()
-  @Post('sign-up')
-  @HttpCode(HttpStatus.CREATED)
+  @AuthSignUp()
   signUp(@Body() signUp: SignUpDto) {
     return this.authService.signUp(signUp);
   }
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @Public()
-  @Post('sign-in')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(LocalAuthGuard)
+  @AuthSignIn()
   async signIn(
     @Req() request: Request,
     @Body() signIn: SignInDto,
@@ -74,15 +71,12 @@ export class AuthenticationController {
     return this.authService.signOut();
   }
 
-  @ApiBearerAuth('access-token')
-  @Get('me')
+  @AuthGetMe()
   getMe(@ActiveUser() user: ActiveUserData) {
     return user;
   }
 
-  @Public()
-  @Post('refresh-tokens')
-  @HttpCode(HttpStatus.OK)
+  @AuthRefreshTokens()
   refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshTokenDto);
   }
@@ -94,8 +88,7 @@ export class AuthenticationController {
     return { qrCode: qrCodeDataUrl };
   }
 
-  @Post('2fa/turn-on')
-  @HttpCode(HttpStatus.OK)
+  @AuthTurnOn2FA()
   async turnOnTwoFactorAuthentication(
     @ActiveUser() user: ActiveUserData,
     @Body('tfaCode') tfaCode: string,
