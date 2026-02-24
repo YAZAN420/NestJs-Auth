@@ -37,10 +37,10 @@ export class UserFactory {
     isEmailVerified: boolean,
     isTwoFactorEnabled: boolean,
     refreshToken?: string | null,
-    twoFactorAuthenticationSecret?: string,
-    emailVerificationToken?: string,
-    passwordResetToken?: string,
-    passwordResetExpires?: Date,
+    twoFactorAuthenticationSecret?: string | null,
+    emailVerificationToken?: string | null,
+    passwordResetToken?: string | null,
+    passwordResetExpires?: Date | null,
   ): User {
     return new User(
       id,

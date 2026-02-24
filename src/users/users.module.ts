@@ -1,9 +1,9 @@
 import { DynamicModule, Global, Module, Type } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { UsersController } from '../presentation/http/users.controller';
+import { UsersService } from './application/users.service';
+import { UsersController } from './presentation/http/users.controller';
 import { HashingModule } from 'src/iam/hashing/hashing.module';
 import { CaslModule } from 'src/iam/authorization/casl/casl.module';
-import { UserFactory } from '../domain/factories/user.factory';
+import { UserFactory } from './domain/factories/user.factory';
 
 @Global()
 @Module({

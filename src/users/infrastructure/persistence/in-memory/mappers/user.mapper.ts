@@ -1,15 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { User } from 'src/users/domain/user';
-import { User as MongoUser } from '../entities/user.entity';
 import { UserFactory } from 'src/users/domain/factories/user.factory';
-
+import { User as InMemoryUser } from '../entities/user.entity';
 @Injectable()
 export class UserMapper {
   constructor(private readonly userFactory: UserFactory) {}
 
-  toDomain(doc: MongoUser): User {
+  toDomain(doc: InMemoryUser): User {
     return this.userFactory.reconstitute(
-      doc._id.toString(),
+      doc._id,
       doc.username,
       doc.email,
       doc.password,

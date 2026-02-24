@@ -9,7 +9,7 @@ export class UserMapper {
 
   toDomain(doc: MongoUser): User {
     return this.userFactory.reconstitute(
-      doc._id.toString(),
+      doc._id,
       doc.username,
       doc.email,
       doc.password,

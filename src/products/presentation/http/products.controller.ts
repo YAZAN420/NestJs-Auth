@@ -8,29 +8,32 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateProductDto } from './dto/update-product.dto';
 import { PoliciesGuard } from 'src/iam/authorization/guards/policies.guard';
-import { CheckPolicies } from 'src/iam/authorization/decorators/check-policies.decorator';
-import { Product } from './schemas/product.schema';
-import { Action } from 'src/iam/authorization/enums/action.enum';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { CreateProductDto } from './dto/create-product.dto';
+import { ProductsService } from 'src/products/application/products.service';
+import { CreateProductCommand } from 'src/products/application/command/create-product.command';
+import { UpdateProductCommand } from 'src/products/application/command/update-product.command';
 
 @UseGuards(PoliciesGuard)
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @CheckPolicies([(ability) => ability.can(Action.Create, Product)])
   @Post()
   async create(@Body() createProductDto: CreateProductDto) {
-    const product = await this.productsService.create(createProductDto);
+    const product = await this.productsService.create(
+      new CreateProductCommand(
+        createProductDto.name,
+        createProductDto.description,
+        createProductDto.price,
+      ),
+    );
     return {
       message: 'Product created successfully',
       data: product,
     };
   }
-  @CheckPolicies([(ability) => ability.can(Action.Read, Product)])
   @Get()
   async findAll() {
     const products = await this.productsService.findAll();
@@ -40,7 +43,6 @@ export class ProductsController {
     };
   }
 
-  @CheckPolicies([(ability) => ability.can(Action.Read, Product)])
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const product = await this.productsService.findOne(id);
@@ -50,19 +52,24 @@ export class ProductsController {
     };
   }
 
-  @CheckPolicies([(ability) => ability.can(Action.Update, Product)])
   @Patch(':id')
   async update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
   ) {
-    const newProduct = await this.productsService.update(id, updateProductDto);
+    const newProduct = await this.productsService.update(
+      new UpdateProductCommand(
+        id,
+        updateProductDto.name,
+        updateProductDto.description,
+        updateProductDto.price,
+      ),
+    );
     return {
       message: 'Product updated successfully',
       data: newProduct,
     };
   }
-  @CheckPolicies([(ability) => ability.can(Action.Delete, Product)])
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.productsService.remove(id);

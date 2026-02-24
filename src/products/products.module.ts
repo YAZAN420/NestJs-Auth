@@ -1,16 +1,21 @@
-import { Module } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { ProductsController } from './products.controller';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ProductSchema } from './schemas/product.schema';
+import { DynamicModule, Module, Type } from '@nestjs/common';
+import { ProductsService } from './application/products.service';
 import { CaslModule } from 'src/iam/authorization/casl/casl.module';
+import { ProductsController } from './presentation/http/products.controller';
+import { ProductFactory } from 'src/products/domain/factories/product.factory';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: 'Product', schema: ProductSchema }]),
-    CaslModule,
-  ],
+  imports: [CaslModule],
   controllers: [ProductsController],
-  providers: [ProductsService],
+  providers: [ProductsService, ProductFactory],
+  exports: [ProductFactory],
 })
-export class ProductsModule {}
+export class ProductsModule {
+  static withInfrastructure(infrastuctureModule: Type | DynamicModule) {
+    return {
+      module: ProductsModule,
+      imports: [infrastuctureModule],
+      exports: [infrastuctureModule],
+    };
+  }
+}
