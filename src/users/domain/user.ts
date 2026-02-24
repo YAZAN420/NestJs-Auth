@@ -14,10 +14,10 @@ export class User {
     private isEmailVerified: boolean,
     private isTwoFactorAuthenticationEnabled: boolean,
     private refreshToken?: string | null,
-    private twoFactorAuthenticationSecret?: string,
-    private emailVerificationToken?: string,
-    private passwordResetToken?: string,
-    private passwordResetExpires?: Date,
+    private twoFactorAuthenticationSecret?: string | null,
+    private emailVerificationToken?: string | null,
+    private passwordResetToken?: string | null,
+    private passwordResetExpires?: Date | null,
   ) {}
 
   public getId(): string {
@@ -44,16 +44,16 @@ export class User {
   public getRefreshToken(): string | null | undefined {
     return this.refreshToken;
   }
-  public getTwoFactorAuthenticationSecret(): string | undefined {
+  public getTwoFactorAuthenticationSecret(): string | null | undefined {
     return this.twoFactorAuthenticationSecret;
   }
-  public getEmailVerificationToken(): string | undefined {
+  public getEmailVerificationToken(): string | null | undefined {
     return this.emailVerificationToken;
   }
-  public getPasswordResetToken(): string | undefined {
+  public getPasswordResetToken(): string | null | undefined {
     return this.passwordResetToken;
   }
-  public getPasswordResetExpires(): Date | undefined {
+  public getPasswordResetExpires(): Date | null | undefined {
     return this.passwordResetExpires;
   }
   public getCreatedAt(): Date {
@@ -81,7 +81,7 @@ export class User {
     }
 
     this.isEmailVerified = true;
-    this.emailVerificationToken = undefined;
+    this.emailVerificationToken = null;
   }
 
   public enableTwoFactorAuth(secret: string): void {

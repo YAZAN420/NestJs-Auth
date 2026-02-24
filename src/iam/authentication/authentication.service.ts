@@ -24,11 +24,11 @@ import { User } from 'src/users/domain/user';
 export class AuthenticationService {
   private readonly otp = new OTP();
   constructor(
+    @Inject(jwtConfig.KEY)
+    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly userService: UsersService,
     private readonly hashService: HashingService,
     private readonly jwtService: JwtService,
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly cls: ClsService,
     private readonly mailService: MailService,
   ) {}
@@ -193,7 +193,6 @@ export class AuthenticationService {
     if (!user) throw new UnauthorizedException();
 
     const secret = this.otp.generateSecret();
-    console.log(user.getEmailValue());
     const otpauthUrl = this.otp.generateURI({
       label: user.getEmailValue(),
       issuer: 'NestJS Course API',

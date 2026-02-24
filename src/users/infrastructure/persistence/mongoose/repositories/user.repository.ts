@@ -21,7 +21,7 @@ export class MongooseUserRepository implements UserRepository {
       .findOneAndUpdate(
         { _id: user.getId() },
         { $set: persistenceData },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: 'after' },
       )
       .exec();
   }
