@@ -6,8 +6,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Product } from './schemas/product.schema';
 import { Model } from 'mongoose';
 import { CaslAbilityFactory } from 'src/iam/authorization/casl/casl-ability.factory';
-import { BaseService } from 'src/common/services/base.service';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { BaseService } from 'src/common/services/base.service';
 
 @Injectable()
 export class ProductsService extends BaseService<Product> {

@@ -1,7 +1,7 @@
-import { UserEntity } from 'src/users/entities/user.entity';
+import { User } from 'src/users/domain/user';
 
 export interface SignInResponse {
-  user: UserEntity;
+  user: User;
   tokens: {
     accessToken: string;
     refreshToken: string;

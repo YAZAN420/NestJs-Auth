@@ -10,9 +10,12 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { HttpExceptionFilter } from './common/filters/global-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: WinstonModule.createLogger(winstonConfig),
-  });
+  const app = await NestFactory.create(
+    AppModule.register({ driver: 'mongoose' }),
+    {
+      logger: WinstonModule.createLogger(winstonConfig),
+    },
+  );
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());

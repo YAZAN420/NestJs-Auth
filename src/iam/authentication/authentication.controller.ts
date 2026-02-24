@@ -21,7 +21,6 @@ import { SignInResponse } from './interfaces/sign-in-response.interface';
 import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import type { Request, Response } from 'express';
-import { User } from 'src/users/schemas/user.schema';
 import {
   AuthGetMe,
   AuthRefreshTokens,
@@ -29,6 +28,7 @@ import {
   AuthSignUp,
   AuthTurnOn2FA,
 } from './decorators/authentication.decorators';
+import { User } from 'src/users/domain/user';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -87,7 +87,7 @@ export class AuthenticationController {
   async generateQrCode(@ActiveUser() user: ActiveUserData) {
     const qrCodeDataUrl =
       await this.authService.generateTwoFactorAuthenticationSecret(user);
-    return { qrCode: qrCodeDataUrl };
+    return { data: { qrCode: qrCodeDataUrl } };
   }
 
   @AuthTurnOn2FA()

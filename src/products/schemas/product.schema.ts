@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema, Types } from 'mongoose';
-import { User } from 'src/users/schemas/user.schema';
+import { User } from 'src/users/infrastructure/persistence/mongoose/schemas/user.schema';
 import { accessibleRecordsPlugin } from '@casl/mongoose';
 
 @Schema({ timestamps: true })

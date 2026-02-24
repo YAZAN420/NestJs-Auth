@@ -6,21 +6,26 @@ import {
   Patch,
   Param,
   Delete,
-  UseInterceptors,
-  ClassSerializerInterceptor,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserCommand } from 'src/users/application/commands/create-user.command';
+import { UsersService } from 'src/users/application/users.service';
+import { UpdateUserCommand } from 'src/users/application/commands/update-user.command';
 
-@UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+    return this.usersService.create(
+      new CreateUserCommand(
+        createUserDto.username,
+        createUserDto.email,
+        createUserDto.password,
+      ),
+    );
   }
 
   @Get()
@@ -30,12 +35,14 @@ export class UsersController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+    return this.usersService.findById(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.updateProfile(
+      new UpdateUserCommand(id, updateUserDto.username),
+    );
   }
 
   @Delete(':id')

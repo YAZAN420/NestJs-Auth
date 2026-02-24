@@ -6,22 +6,20 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SignUpDto } from './dto/sign-up.dto';
-import { UsersService } from 'src/users/users.service';
 import { HashingService } from '../hashing/hashing.service';
 import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { ActiveUserData } from './interfaces/active-user-data.interface';
-import { User } from 'src/users/schemas/user.schema';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { UserEntity } from 'src/users/entities/user.entity';
-import { plainToInstance } from 'class-transformer';
 import { ClsService } from 'nestjs-cls';
 import { OTP } from 'otplib';
 import { toDataURL } from 'qrcode';
 import { MailService } from 'src/mail/mail.service';
 import * as crypto from 'crypto';
-
+import { UsersService } from 'src/users/application/users.service';
+import { CreateUserCommand } from 'src/users/application/commands/create-user.command';
+import { User } from 'src/users/domain/user';
 @Injectable()
 export class AuthenticationService {
   private readonly otp = new OTP();
@@ -36,10 +34,15 @@ export class AuthenticationService {
   ) {}
   async signUp(signUp: SignUpDto) {
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    await this.userService.create({
-      ...signUp,
-      emailVerificationToken: verificationToken,
-    });
+    const command = new CreateUserCommand(
+      signUp.username,
+      signUp.email,
+      signUp.password,
+    );
+    const newUser = await this.userService.create(command);
+
+    newUser.setVerificationToken(verificationToken);
+    await this.userService.save(newUser);
 
     this.mailService
       .sendVerificationEmail(signUp.email, verificationToken)
@@ -51,26 +54,25 @@ export class AuthenticationService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userService.findOneEmail(email);
+    const user = await this.userService.findByEmail(email);
     if (!user) return null;
 
     const isPasswordValid = await this.hashService.compare(
       password,
-      user.password,
+      user.getPasswordHash(),
     );
-
     if (!isPasswordValid) return null;
     return user;
   }
 
   async signIn(user: User, tfaCode?: string) {
-    if (!user.isEmailVerified) {
+    if (!user.getIsEmailVerified()) {
       throw new UnauthorizedException(
         'Please verify your email before signing in',
       );
     }
 
-    if (user.isTwoFactorAuthenticationEnabled) {
+    if (user.getIsTwoFactorAuthenticationEnabled()) {
       if (!tfaCode) {
         throw new ForbiddenException({
           requires2FA: true,
@@ -78,13 +80,11 @@ export class AuthenticationService {
             'Please provide a two-factor authentication code to continue',
         });
       }
-
-      const isCodeValid = await this.otp.verify({
+      const { valid } = await this.otp.verify({
         token: tfaCode,
-        secret: user.twoFactorAuthenticationSecret!,
+        secret: user.getTwoFactorAuthenticationSecret()!,
       });
-
-      if (!isCodeValid) {
+      if (!valid) {
         throw new UnauthorizedException(
           'Invalid two-factor authentication code',
         );
@@ -92,11 +92,9 @@ export class AuthenticationService {
     }
 
     const tokens = await this.generateTokens(user);
-    const userEntity = plainToInstance(UserEntity, user.toObject(), {
-      excludeExtraneousValues: true,
-    });
+
     return {
-      user: userEntity,
+      user,
       tokens,
     };
   }
@@ -116,12 +114,10 @@ export class AuthenticationService {
           issuer: this.jwtConfiguration.issuer,
         },
       );
-
-      const user = await this.userService.findOneWithRefreshToken(id);
-
+      const user = await this.userService.findById(id);
       const isValid = await this.hashService.compare(
         refreshTokenDto.refreshToken,
-        user.refreshToken ?? '',
+        user.getRefreshToken() ?? '',
       );
 
       if (!isValid) {
@@ -137,22 +133,16 @@ export class AuthenticationService {
   private async generateTokens(user: User) {
     const [accessToken, refreshToken] = await Promise.all([
       this.signToken<Partial<ActiveUserData>>(
-        user._id.toString(),
+        user.getId(),
         this.jwtConfiguration.accessTokenTtl,
-        { email: user.email, role: user.role },
+        { email: user.getEmailValue(), role: user.getRole() },
       ),
-      this.signToken(
-        user._id.toString(),
-        this.jwtConfiguration.refreshTokenTtl,
-      ),
+      this.signToken(user.getId(), this.jwtConfiguration.refreshTokenTtl),
     ]);
 
     const hashedRefreshToken = await this.hashService.hash(refreshToken);
 
-    await this.userService.updateRefreshToken(
-      user._id.toString(),
-      hashedRefreshToken,
-    );
+    await this.userService.updateRefreshToken(user.getId(), hashedRefreshToken);
 
     return {
       accessToken,
@@ -175,9 +165,9 @@ export class AuthenticationService {
   }
 
   async turnOnTwoFactorAuthentication(userId: string, code: string) {
-    const user = await this.userService.findOneWithTfaSecret(userId);
+    const user = await this.userService.findById(userId);
 
-    if (!user.twoFactorAuthenticationSecret) {
+    if (!user.getTwoFactorAuthenticationSecret()) {
       throw new UnauthorizedException(
         'Two-factor authentication secret is missing',
       );
@@ -185,57 +175,56 @@ export class AuthenticationService {
 
     const isCodeValid = await this.otp.verify({
       token: code,
-      secret: user.twoFactorAuthenticationSecret,
+      secret: user.getTwoFactorAuthenticationSecret()!,
     });
 
     if (!isCodeValid) {
       throw new UnauthorizedException('Invalid two-factor authentication code');
     }
 
-    await this.userService.updateInternal(userId, {
-      isTwoFactorAuthenticationEnabled: true,
-    });
+    user.enableTwoFactorAuth(user.getTwoFactorAuthenticationSecret()!);
+    await this.userService.save(user);
 
     return { message: 'Two-factor authentication successfully enabled' };
   }
 
-  async generateTwoFactorAuthenticationSecret(user: ActiveUserData) {
-    const secret = this.otp.generateSecret();
+  async generateTwoFactorAuthenticationSecret(activeUser: ActiveUserData) {
+    const user = await this.userService.findById(activeUser.id);
+    if (!user) throw new UnauthorizedException();
 
+    const secret = this.otp.generateSecret();
+    console.log(user.getEmailValue());
     const otpauthUrl = this.otp.generateURI({
-      label: user.email,
+      label: user.getEmailValue(),
       issuer: 'NestJS Course API',
       secret: secret,
     });
 
-    await this.userService.updateInternal(user.id, {
-      twoFactorAuthenticationSecret: secret,
-    });
+    user.setTwoFactorSecret(secret);
+    await this.userService.save(user);
 
     return toDataURL(otpauthUrl);
   }
 
   async verifyEmail(token: string) {
     const user = await this.userService.findByVerificationToken(token);
-    await this.userService.updateInternal(user._id.toString(), {
-      isEmailVerified: true,
-      emailVerificationToken: undefined,
-    });
+    if (!user) throw new BadRequestException('Invalid token');
+    user.verifyEmail(token);
+    await this.userService.save(user);
     return { message: 'Email verified successfully.' };
   }
 
   async forgotPassword(email: string) {
-    const user = await this.userService.findOneEmail(email);
+    const user = await this.userService.findByEmail(email);
+    if (!user) return { message: 'Password reset link sent to your email.' };
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000);
 
-    await this.userService.updateInternal(user._id.toString(), {
-      passwordResetToken: resetToken,
-      passwordResetExpires: resetExpires,
-    });
+    user.generatePasswordResetToken(resetToken, resetExpires);
+    await this.userService.save(user);
 
     this.mailService
-      .sendPasswordResetEmail(user.email, resetToken)
+      .sendPasswordResetEmail(user.getEmailValue(), resetToken)
       .catch((err) => console.error('Email Dispatch Failed:', err));
 
     return { message: 'Password reset link sent to your email.' };
@@ -244,16 +233,13 @@ export class AuthenticationService {
   async resetPassword(token: string, newPassword: string) {
     const user = await this.userService.findByResetToken(token);
 
-    if (!user || user.passwordResetExpires! < new Date()) {
+    if (!user) {
       throw new BadRequestException('Invalid or expired password reset token.');
     }
-
     const hashedPassword = await this.hashService.hash(newPassword);
-    await this.userService.updateInternal(user._id.toString(), {
-      password: hashedPassword,
-      passwordResetToken: undefined,
-      passwordResetExpires: undefined,
-    });
+
+    user.resetPasswordWithToken(hashedPassword, token);
+    await this.userService.save(user);
 
     return { message: 'Password has been reset successfully.' };
   }
