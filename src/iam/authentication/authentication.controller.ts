@@ -22,13 +22,14 @@ import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import {
-  AuthGetMe,
   AuthRefreshTokens,
   AuthSignIn,
   AuthSignUp,
   AuthTurnOn2FA,
 } from './decorators/authentication.decorators';
 import { User } from 'src/users/domain/user';
+import { UserResponseDto } from 'src/users/presentation/http/dto/user-response.dto';
+import { ClsService } from 'nestjs-cls';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -36,6 +37,7 @@ export class AuthenticationController {
     private readonly authService: AuthenticationService,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
+    private readonly cls: ClsService,
   ) {}
 
   @AuthSignUp()
@@ -61,7 +63,7 @@ export class AuthenticationController {
     return {
       message: 'User signed in successfully',
       data: {
-        user: result.user,
+        user: UserResponseDto.fromEntity(result.user),
         accessToken: result.tokens.accessToken,
       },
     };
@@ -71,11 +73,6 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   signOut() {
     return this.authService.signOut();
-  }
-
-  @AuthGetMe()
-  getMe(@ActiveUser() user: ActiveUserData) {
-    return { data: user };
   }
 
   @AuthRefreshTokens()

@@ -1,7 +1,6 @@
 import {
   applyDecorators,
   Post,
-  Get,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -34,10 +33,6 @@ export function AuthRefreshTokens() {
     Post('refresh-tokens'),
     HttpCode(HttpStatus.OK),
   );
-}
-
-export function AuthGetMe() {
-  return applyDecorators(Get('me'));
 }
 
 export function AuthTurnOn2FA() {

@@ -36,6 +36,7 @@ export class MongooseUserRepository implements UserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     const doc = await this.userModel.findOne({ email }).exec();
+
     if (!doc) return null;
     return this.userMapper.toDomain(doc);
   }

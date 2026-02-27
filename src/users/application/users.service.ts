@@ -9,7 +9,6 @@ import { UserRepository } from 'src/users/application/ports/user.repository';
 import { UserFactory } from 'src/users/domain/factories/user.factory';
 import { User } from 'src/users/domain/user';
 import { CreateUserCommand } from 'src/users/application/commands/create-user.command';
-import { Action } from 'src/iam/authorization/enums/action.enum';
 import { UpdateUserCommand } from './commands/update-user.command';
 
 @Injectable()
@@ -49,10 +48,8 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    const ability = this.abilityFactory.createForUser();
-
     const users = await this.userRepository.findAll();
-    return users.filter((user) => ability.can(Action.Read, user));
+    return users;
   }
 
   async remove(id: string): Promise<{ message: string }> {
