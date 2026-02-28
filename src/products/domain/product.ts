@@ -10,7 +10,7 @@ export class Product {
     private name: string,
     private description: string,
     private price: number,
-    private createdBy: string,
+    private _createdBy: string,
     private createdAt: Date,
     private updatedAt: Date,
   ) {}
@@ -26,8 +26,8 @@ export class Product {
   public getPrice(): number {
     return this.price;
   }
-  public getCreatedBy(): string {
-    return this.createdBy;
+  get createdBy(): string {
+    return this._createdBy;
   }
   public getCreatedAt(): Date {
     return this.createdAt;

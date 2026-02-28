@@ -31,7 +31,7 @@ export class ProductMapper {
       name: user.getName(),
       description: user.getDescription(),
       price: user.getPrice(),
-      createdBy: user.getCreatedBy(),
+      createdBy: user.createdBy,
     };
   }
 }

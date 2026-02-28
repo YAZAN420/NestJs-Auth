@@ -1,6 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { ClsService } from 'nestjs-cls';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 
 import { CreateProductCommand } from './command/create-product.command';
@@ -8,17 +10,20 @@ import { UpdateProductCommand } from './command/update-product.command';
 import { ProductFactory } from 'src/products/domain/factories/product.factory';
 import { Product } from '../domain/product';
 import { ProductRepository } from 'src/products/application/ports/product.repository';
+import { AuthorizationPort } from 'src/iam/application/ports/authorization.port';
+import { Action } from 'src/iam/domain/enums/action.enum';
 
 @Injectable()
 export class ProductsService {
   constructor(
     protected readonly productRepository: ProductRepository,
     protected readonly productFactory: ProductFactory,
-    private readonly cls: ClsService,
+    protected readonly authPort: AuthorizationPort,
   ) {}
-  async create(command: CreateProductCommand): Promise<Product> {
-    const user = this.cls.get<ActiveUserData>('User');
-
+  async create(
+    user: ActiveUserData,
+    command: CreateProductCommand,
+  ): Promise<Product> {
     const newProduct = this.productFactory.createNew(
       command.name,
       command.description,
@@ -43,22 +48,48 @@ export class ProductsService {
     return doc;
   }
 
-  async update(command: UpdateProductCommand): Promise<Product> {
-    const prouct = await this.productRepository.findById(command.id);
-
-    if (!prouct) {
+  async update(
+    user: ActiveUserData,
+    command: UpdateProductCommand,
+  ): Promise<Product> {
+    const product = await this.productRepository.findById(command.id);
+    if (!product) {
       throw new NotFoundException(
         'Product not found or you do not have permission to update it',
       );
     }
-    const { id, ...updatePayload } = command;
-    prouct.updateDetails(updatePayload);
-    return prouct;
+    const isAllowed = this.authPort.checkPermission(
+      user,
+      Action.Update,
+      product,
+    );
+
+    if (!isAllowed) {
+      throw new ForbiddenException(
+        'You do not have permission to update this specific product, you are not the owner!',
+      );
+    }
+
+    const { id: _, ...updatePayload } = command;
+    product.updateDetails(updatePayload);
+    return product;
   }
 
-  async remove(id: string): Promise<{ message: string }> {
+  async remove(user: ActiveUserData, id: string): Promise<{ message: string }> {
     const product = await this.productRepository.findById(id);
     if (!product) throw new NotFoundException('User not found');
+
+    const isAllowed = this.authPort.checkPermission(
+      user,
+      Action.Delete,
+      product,
+    );
+
+    if (!isAllowed) {
+      throw new ForbiddenException(
+        'You do not have permission to update this specific product, you are not the owner!',
+      );
+    }
     await this.productRepository.delete(id);
     return { message: 'Document deleted successfully' };
   }

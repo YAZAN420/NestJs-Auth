@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Injectable } from '@nestjs/common';
 import { AuthorizationPort } from '../../../application/ports/authorization.port';
 import { ActiveUserData } from '../../../domain/interfaces/active-user-data.interface';

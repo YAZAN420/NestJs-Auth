@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,6 +10,9 @@ import { User } from 'src/users/domain/user';
 import { CreateUserCommand } from 'src/users/application/commands/create-user.command';
 import { UpdateUserCommand } from './commands/update-user.command';
 import { HashingPort } from 'src/iam/application/ports/hashing.port';
+import { AuthorizationPort } from 'src/iam/application/ports/authorization.port';
+import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
+import { Action } from 'src/iam/domain/enums/action.enum';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +20,7 @@ export class UsersService {
     private readonly hashService: HashingPort,
     private readonly userRepository: UserRepository,
     private readonly userFactory: UserFactory,
+    private readonly authPort: AuthorizationPort,
   ) {}
 
   async create(command: CreateUserCommand): Promise<User> {
@@ -68,9 +73,21 @@ export class UsersService {
     await this.userRepository.save(user);
   }
 
-  async updateProfile(command: UpdateUserCommand): Promise<User> {
+  async updateProfile(
+    activeUser: ActiveUserData,
+    command: UpdateUserCommand,
+  ): Promise<User> {
     const user = await this.userRepository.findById(command.id);
     if (!user) throw new NotFoundException('User not found');
+
+    const isAllowed = this.authPort.checkPermission(
+      activeUser,
+      Action.Update,
+      User,
+    );
+    if (!isAllowed) {
+      throw new ForbiddenException('You can only update your own profile!');
+    }
     if (command.username) {
       const existingUser = await this.userRepository.findByUsername(
         command.username,
