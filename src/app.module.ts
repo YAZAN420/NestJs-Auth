@@ -11,7 +11,6 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpCacheInterceptor } from './common/presentation/interceptors/http-cache.interceptor';
 import { CacheModule } from './common/infrastructure/cache/cache.module';
 import { DatabaseModule } from './common/infrastructure/database/database.module';
-
 @Module({
   imports: [IamModule, MailModule, CacheModule, DatabaseModule],
   providers: [

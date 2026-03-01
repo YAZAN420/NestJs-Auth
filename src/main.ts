@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/infrastructure/logger/winston.config';
 import { ResponseInterceptor } from './common/presentation/interceptors/response.interceptor';
-import { HttpExceptionFilter } from './common/presentation/filters/global-exception.filter';
+import { GlobalExceptionFilter } from './common/presentation/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(
@@ -17,7 +17,7 @@ async function bootstrap() {
     },
   );
 
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.use(helmet());
 
