@@ -13,6 +13,7 @@ import { HashingPort } from 'src/iam/application/ports/hashing.port';
 import { AuthorizationPort } from 'src/iam/application/ports/authorization.port';
 import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 import { Action } from 'src/iam/domain/enums/action.enum';
+import { CachePort } from 'src/common/application/ports/cache.port';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +22,7 @@ export class UsersService {
     private readonly userRepository: UserRepository,
     private readonly userFactory: UserFactory,
     private readonly authPort: AuthorizationPort,
+    private readonly cachePort: CachePort,
   ) {}
 
   async create(command: CreateUserCommand): Promise<User> {
@@ -41,6 +43,9 @@ export class UsersService {
     );
 
     await this.userRepository.save(newUser);
+
+    await this.cachePort.delete('GET:/users');
+
     return newUser;
   }
 
@@ -98,6 +103,11 @@ export class UsersService {
       user.changeUsername(command.username);
     }
     await this.userRepository.save(user);
+
+    await this.cachePort.delete('GET:/users');
+    await this.cachePort.delete(`GET:/users/me:${activeUser.id}`);
+    await this.cachePort.delete(`GET:/users/${user.getId()}`);
+
     return user;
   }
 

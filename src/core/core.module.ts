@@ -8,6 +8,7 @@ import { ApplicationBootstrapOptions } from 'src/common/interfaces/application-b
 import databaseConfig from 'src/config/database.config';
 import appConfig from 'src/config/app.config';
 import { validate } from 'src/config/env.validation';
+import redisConfig from 'src/config/redis.config';
 
 @Global()
 @Module({})
@@ -32,7 +33,7 @@ export class CoreModule {
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
-          load: [appConfig, databaseConfig],
+          load: [appConfig, databaseConfig, redisConfig],
           validate: validate,
         }),
         ThrottlerModule.forRoot([

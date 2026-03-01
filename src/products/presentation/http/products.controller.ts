@@ -19,6 +19,7 @@ import { Action } from 'src/iam/domain/enums/action.enum';
 import { Product } from 'src/products/domain/product';
 import { ClsService } from 'nestjs-cls';
 import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
+import { CachePublic } from 'src/common/presentation/decorators/cache-public.decorator';
 
 @UseGuards(PoliciesGuard)
 @Controller('products')
@@ -51,6 +52,7 @@ export class ProductsController {
     (authPort, user) => authPort.checkPermission(user, Action.Read, Product),
   ])
   @Get()
+  @CachePublic()
   async findAll() {
     const products = await this.productsService.findAll();
     return {

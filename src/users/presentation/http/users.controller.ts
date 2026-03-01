@@ -22,6 +22,7 @@ import { CheckPolicies } from 'src/iam/presentation/http/decorators/check-polici
 import { User } from 'src/users/domain/user';
 import { Action } from 'src/iam/domain/enums/action.enum';
 import { ClsService } from 'nestjs-cls';
+import { CachePort } from 'src/common/application/ports/cache.port';
 
 @UseGuards(PoliciesGuard)
 @Controller('users')
@@ -29,6 +30,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly cls: ClsService,
+    private readonly cachePort: CachePort,
   ) {}
 
   @Post()
@@ -98,6 +100,7 @@ export class UsersController {
       activeUser,
       new UpdateUserCommand(id, updateUserDto.username),
     );
+
     return {
       message: 'Users updated successfully',
       data: UserResponseDto.fromEntity(user),
