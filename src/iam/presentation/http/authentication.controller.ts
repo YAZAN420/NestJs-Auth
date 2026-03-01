@@ -26,10 +26,10 @@ import {
 } from './decorators/authentication.decorators';
 import { User } from 'src/users/domain/user';
 import { UserResponseDto } from 'src/users/presentation/http/dto/user-response.dto';
-import { ClsService } from 'nestjs-cls';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -37,7 +37,6 @@ export class AuthenticationController {
     private readonly authService: AuthenticationService,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    private readonly cls: ClsService,
   ) {}
 
   @AuthSignUp()
@@ -71,8 +70,8 @@ export class AuthenticationController {
 
   @Post('sign-out')
   @HttpCode(HttpStatus.OK)
-  signOut() {
-    return this.authService.signOut();
+  signOut(@ActiveUser() user: ActiveUserData) {
+    return this.authService.signOut(user.id);
   }
 
   @AuthRefreshTokens()

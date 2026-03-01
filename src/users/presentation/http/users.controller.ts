@@ -21,15 +21,14 @@ import { AuthorizationPort } from 'src/iam/application/ports/authorization.port'
 import { CheckPolicies } from 'src/iam/presentation/http/decorators/check-policies.decorator';
 import { User } from 'src/users/domain/user';
 import { Action } from 'src/iam/domain/enums/action.enum';
-import { ClsService } from 'nestjs-cls';
 import { CachePort } from 'src/common/application/ports/cache.port';
+import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 
 @UseGuards(PoliciesGuard)
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly cls: ClsService,
     private readonly cachePort: CachePort,
   ) {}
 
@@ -94,8 +93,11 @@ export class UsersController {
     (authPort: AuthorizationPort, user: ActiveUserData) =>
       authPort.checkPermission(user, Action.Update, User),
   ])
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const activeUser = this.cls.get<ActiveUserData>('User');
+  async update(
+    @ActiveUser() activeUser: ActiveUserData,
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     const user = await this.usersService.updateProfile(
       activeUser,
       new UpdateUserCommand(id, updateUserDto.username),

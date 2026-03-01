@@ -11,13 +11,15 @@ import { CheckPolicies } from '../decorators/check-policies.decorator';
 import { AuthorizationPort } from '../../../application/ports/authorization.port';
 import { ActiveUserData } from '../../../domain/interfaces/active-user-data.interface';
 import { PolicyHandler } from '../interfaces/policy-handler.interface';
+import { AppClsStore } from 'src/common/interfaces/app-cls-store.interface';
+import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly authorizationPort: AuthorizationPort,
-    private readonly cls: ClsService,
+    private readonly cls: ClsService<AppClsStore>,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -31,7 +33,7 @@ export class PoliciesGuard implements CanActivate {
       return true;
     }
 
-    const user = this.cls.get<ActiveUserData>('User');
+    const user = this.cls.get<ActiveUserData>(CLS_KEYS.USER);
     if (!user) {
       throw new ForbiddenException('User not found in context');
     }

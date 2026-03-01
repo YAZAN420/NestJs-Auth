@@ -9,7 +9,6 @@ import jwtConfig from 'src/config/jwt.config';
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { ActiveUserData } from '../../domain/interfaces/active-user-data.interface';
-import { ClsService } from 'nestjs-cls';
 import { OTP } from 'otplib';
 import { toDataURL } from 'qrcode';
 import * as crypto from 'crypto';
@@ -29,7 +28,6 @@ export class AuthenticationService {
     private readonly userService: UsersService,
     private readonly hashingPort: HashingPort,
     private readonly jwtService: JwtService,
-    private readonly cls: ClsService,
     private readonly mailPort: MailPort,
   ) {}
   async signUp(signUp: SignUpDto) {
@@ -100,8 +98,7 @@ export class AuthenticationService {
     return user;
   }
 
-  async signOut() {
-    const id: string = this.cls.get<ActiveUserData>('User').id;
+  async signOut(id: string) {
     await this.userService.updateRefreshToken(id, null);
     return { message: 'User signed out successfully' };
   }

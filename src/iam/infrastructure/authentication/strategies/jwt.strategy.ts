@@ -5,13 +5,15 @@ import type { ConfigType } from '@nestjs/config';
 import jwtConfig from 'src/config/jwt.config';
 import { ActiveUserData } from '../../../domain/interfaces/active-user-data.interface';
 import { ClsService } from 'nestjs-cls';
+import { AppClsStore } from 'src/common/interfaces/app-cls-store.interface';
+import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    private readonly cls: ClsService,
+    private readonly cls: ClsService<AppClsStore>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -21,8 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: ActiveUserData) {
-    const user = { id: payload.id, email: payload.email, role: payload.role };
-    this.cls.set('User', user);
-    return user;
+    this.cls.set(CLS_KEYS.USER, payload);
+    return payload;
   }
 }

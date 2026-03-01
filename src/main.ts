@@ -5,7 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './common/logger/winston.config';
+import { winstonConfig } from './common/infrastructure/logger/winston.config';
 import { ResponseInterceptor } from './common/presentation/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/presentation/filters/global-exception.filter';
 

@@ -17,24 +17,24 @@ import { UpdateProductCommand } from 'src/products/application/command/update-pr
 import { CheckPolicies } from 'src/iam/presentation/http/decorators/check-policies.decorator';
 import { Action } from 'src/iam/domain/enums/action.enum';
 import { Product } from 'src/products/domain/product';
-import { ClsService } from 'nestjs-cls';
-import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
+import type { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 import { CachePublic } from 'src/common/presentation/decorators/cache-public.decorator';
+import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
+import { ActiveUser } from 'src/iam/presentation/http/decorators/active-user.decorator';
 
 @UseGuards(PoliciesGuard)
 @Controller('products')
 export class ProductsController {
-  constructor(
-    private readonly productsService: ProductsService,
-    private readonly cls: ClsService,
-  ) {}
+  constructor(private readonly productsService: ProductsService) {}
 
   @CheckPolicies([
     (authPort, user) => authPort.checkPermission(user, Action.Create, Product),
   ])
   @Post()
-  async create(@Body() createProductDto: CreateProductDto) {
-    const user = this.cls.get<ActiveUserData>('User');
+  async create(
+    @ActiveUser() user: ActiveUserData,
+    @Body() createProductDto: CreateProductDto,
+  ) {
     const product = await this.productsService.create(
       user,
       new CreateProductCommand(
@@ -78,10 +78,10 @@ export class ProductsController {
   ])
   @Patch(':id')
   async update(
+    @ActiveUser() user: ActiveUserData,
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
   ) {
-    const user = this.cls.get<ActiveUserData>('User');
     const newProduct = await this.productsService.update(
       user,
       new UpdateProductCommand(
@@ -101,8 +101,7 @@ export class ProductsController {
     (authPort, user) => authPort.checkPermission(user, Action.Delete, Product),
   ])
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    const user = this.cls.get<ActiveUserData>('User');
+  async remove(@ActiveUser() user: ActiveUserData, @Param('id') id: string) {
     await this.productsService.remove(user, id);
     return {
       message: 'Product deleted successfully',
