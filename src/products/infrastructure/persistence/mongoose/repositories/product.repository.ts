@@ -28,8 +28,9 @@ export class MongooseProductRepository implements ProductRepository {
       .findOneAndUpdate(
         { _id: product.getId() },
         { $set: persistenceData },
-        { upsert: true, returnDocument: 'after', session: this.session },
+        { upsert: true, returnDocument: 'after' },
       )
+      .session(this.session)
       .exec();
   }
   async delete(id: string): Promise<void> {
