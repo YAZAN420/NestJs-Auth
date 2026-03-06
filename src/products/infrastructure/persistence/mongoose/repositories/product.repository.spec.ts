@@ -59,7 +59,10 @@ describe('MongooseProductRepository', () => {
   describe('findAll', () => {
     it('should return an array of domain products', async () => {
       const mockMongoDocs = [{ _id: '1', name: 'Product 1' }];
-      const expectedDomainProduct = createMockProduct({ id: '1' });
+      const expectedDomainProduct = createMockProduct({
+        id: '1',
+        name: 'Product 1',
+      });
 
       mockExec.mockResolvedValueOnce(mockMongoDocs);
       mockProductMapper.toDomain.mockReturnValue(expectedDomainProduct);
