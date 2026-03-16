@@ -1,3 +1,4 @@
+import { ChatModule } from './chat/chat.module';
 import { UsersQueryService } from './users/application/users-query.service';
 import { Module, DynamicModule } from '@nestjs/common';
 import { CoreModule } from './core/core.module';
@@ -13,7 +14,7 @@ import { HttpCacheInterceptor } from './common/presentation/interceptors/http-ca
 import { CacheModule } from './common/infrastructure/cache/cache.module';
 import { DatabaseModule } from './common/infrastructure/database/database.module';
 @Module({
-  imports: [IamModule, MailModule, CacheModule, DatabaseModule],
+  imports: [ChatModule, IamModule, MailModule, CacheModule, DatabaseModule],
   providers: [
     UsersQueryService,
     {

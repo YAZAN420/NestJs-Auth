@@ -13,6 +13,7 @@ import { ActiveUserData } from '../../../domain/interfaces/active-user-data.inte
 import { PolicyHandler } from '../interfaces/policy-handler.interface';
 import { AppClsStore } from 'src/common/interfaces/app-cls-store.interface';
 import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {
@@ -33,13 +34,23 @@ export class PoliciesGuard implements CanActivate {
       return true;
     }
 
-    const user = this.cls.get<ActiveUserData>(CLS_KEYS.USER);
+    let user: ActiveUserData | undefined;
+
+    if (this.cls.isActive()) {
+      user = this.cls.get<ActiveUserData>(CLS_KEYS.USER);
+    }
     if (!user) {
-      throw new ForbiddenException('User not found in context');
+      const type = context.getType<'http' | 'ws' | 'graphql'>();
+      if (type === 'ws') {
+        const client = context
+          .switchToWs()
+          .getClient<Socket & { user?: ActiveUserData }>();
+        user = client.user;
+      }
     }
 
     const isAllowed = policyHandlers.every((handler) =>
-      this.execPolicyHandler(handler, user),
+      this.execPolicyHandler(handler, user as ActiveUserData),
     );
 
     if (!isAllowed) {

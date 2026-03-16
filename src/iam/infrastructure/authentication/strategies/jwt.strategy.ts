@@ -23,7 +23,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: ActiveUserData) {
-    this.cls.set(CLS_KEYS.USER, payload);
+    if (this.cls.isActive()) {
+      this.cls.set(CLS_KEYS.USER, payload);
+    }
     return payload;
   }
 }
